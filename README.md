@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next.js SSG + ISR: Pokédex y Rick and Morty
 
-## Getting Started
+Laboratorio de **enrutamiento y páginas** con Next.js (App Router). Incluye dos aplicaciones en un mismo proyecto:
 
-First, run the development server:
+- **Pokédex** (`/pokemon`): rutas estáticas y dinámicas con la PokeAPI.
+- **Rick and Morty** (`/rickandmorty`): lista, búsqueda en tiempo real y detalle de personajes con la Rick and Morty API.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+**Demo:** LINK_VERCEL
+
+## Tecnologías
+
+- Next.js 16 (App Router, Turbopack)
+- React 19 y TypeScript
+- Tailwind CSS 4
+- react-icons
+- Desplegado en Vercel
+
+## Estrategias de renderizado
+
+| Parte | Estrategia | Por qué |
+|---|---|---|
+| Lista de Pokémon (`/pokemon`) | ISR (`revalidate: 86400`) | Los datos cambian poco; se regenera cada 24 horas |
+| Detalle de Pokémon (`/pokemon/[name]`) | SSG + ISR | `generateStaticParams` genera los 151 Pokémon en el build |
+| Lista de personajes (`/rickandmorty`) | SSR + `force-cache` (SSG) | El listado casi no cambia; se guarda en caché |
+| Búsqueda de personajes | CSR (`useState` + `useEffect`) | Depende de lo que escribe el usuario |
+| Detalle de personaje (`/rickandmorty/[id]`) | SSG + ISR (`revalidate: 864000`) | Se generan los 826 personajes en el build y se revalidan cada 10 días |
+
+## Funcionalidades
+
+**Pokédex**
+- Lista de 151 Pokémon con imágenes (lazy loading).
+- Página de detalle con tipos, estadísticas, altura, peso y habilidades.
+- Manejo de errores (`error.tsx`) y páginas no encontradas (`not-found.tsx`).
+
+**Rick and Morty**
+- Lista de personajes con paginación.
+- Búsqueda en tiempo real por nombre, status, type y gender (con debounce).
+- Detalle con todos los campos del Response de la API y los episodios.
+- Rutas estáticas para los 826 personajes.
+- Respaldo local de datos (`src/data/characters.json`) para que el build no falle si la API responde 429.
+
+## Estructura
+
+```
+src/
+  app/
+    page.tsx                  # Inicio
+    pokemon/                  # Pokédex (lista, detalle, error, not-found)
+    rickandmorty/             # Lista y detalle de personajes
+  components/
+    CharacterExplorer.tsx     # Búsqueda y filtros (cliente)
+  lib/rickandmorty.ts         # Acceso a la API con reintentos y respaldo
+  data/characters.json        # Copia local de los personajes
+  types/                      # Tipos de TypeScript
+scripts/
+  snapshot.mjs                # Descarga la copia local de los datos
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Cómo ejecutarlo
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Requisitos: Node.js 18.18 o superior.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Abre http://localhost:3000.
 
-To learn more about Next.js, take a look at the following resources:
+Para producción:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run build
+npm start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Para actualizar la copia local de los personajes:
 
-## Deploy on Vercel
+```bash
+node scripts/snapshot.mjs
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Autor
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ederd Carrasco Oscco, estudiante de Tecsup.
+Curso: Desarrollo de Aplicaciones Web Avanzado.
